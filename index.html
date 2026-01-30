@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumina | RGB Intelligence Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --rgb-red: #ff3366;
+            --rgb-green: #00f5d4;
+            --rgb-blue: #00bbf9;
+            --rgb-purple: #9b5de5;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #060505;
+            color: #f1f1f1;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .cinematic-bg {
+            background-image: url('https://images.unsplash.com/photo-1498471731312-b6d2b8280c61?auto=format&fit=crop&q=80&w=2574');
+            background-size: cover;
+            background-position: center bottom;
+            background-attachment: fixed;
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+        }
+        
+        .cinematic-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(6, 5, 5, 0) 0%, rgba(6, 5, 5, 0.4) 40%, rgba(6, 5, 5, 0.95) 100%);
+            z-index: -1;
+        }
+
+        .serif { font-family: 'Playfair Display', serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .dashboard-overlay {
+            min-height: 100vh;
+            backdrop-filter: blur(2px);
+        }
+
+        .tile {
+            background: rgba(15, 12, 12, 0.6);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rgb-border::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(45deg, var(--rgb-red), var(--rgb-purple), var(--rgb-blue), var(--rgb-green), var(--rgb-red));
+            background-size: 400% 400%;
+            z-index: -1;
+            animation: rgb-flow 8s linear infinite;
+            opacity: 0.05;
+            transition: opacity 0.3s;
+        }
+        .tile:hover.rgb-border::before {
+            opacity: 0.2;
+        }
+
+        @keyframes rgb-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .rgb-text {
+            background: linear-gradient(90deg, var(--rgb-red), var(--rgb-blue), var(--rgb-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: rgb-text-flow 4s linear infinite;
+        }
+
+        @keyframes rgb-text-flow {
+            to { background-position: 200% center; }
+        }
+
+        .tile-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.25em;
+            color: #666;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Liquid Button Effect */
+        .liquid-button {
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .liquid-button:hover {
+            transform: scale(1.06) translateY(-2px);
+            border-radius: 20% 40% 20% 40% / 40% 20% 40% 20%;
+        }
+
+        .liquid-button:active {
+            transform: scale(0.96);
+        }
+
+        /* Bouncy Navigation Tabs */
+        .bouncy-tab {
+            transition: transform 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+        }
+        .bouncy-tab:active {
+            transform: scale(0.9);
+        }
+        
+        .tab-indicator {
+            transition: all 0.5s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+        }
+
+        /* Gravity Shift Animation */
+        @keyframes gravity-shift {
+            0% {
+                opacity: 0;
+                transform: translateY(120px) scale(0.96);
+                filter: blur(8px);
+            }
+            70% {
+                transform: translateY(-12px) scale(1.01);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        .gravity-shift {
+            animation: gravity-shift 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .sukoya-text {
+            font-size: 24vw;
+            font-weight: 800;
+            color: transparent;
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.02) 100%);
+            -webkit-background-clip: text;
+            letter-spacing: -0.04em;
+            pointer-events: none;
+            user-select: none;
+            position: absolute;
+            bottom: -8vh;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            z-index: 0;
+            opacity: 0.6;
+            filter: blur(1px);
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "recharts": "https://esm.sh/recharts@^3.7.0"
+  }
+}
+</script>
+</head>
+<body>
+    <div class="cinematic-bg"></div>
+    <div class="cinematic-overlay"></div>
+    <div id="root"></div>
+</body>
+</html>
