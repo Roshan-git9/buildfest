@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 import { Student } from '../../types';
 
 interface Props {
@@ -8,7 +8,7 @@ interface Props {
 }
 
 export const ParentPortal: React.FC<Props> = ({ student }) => {
-  const { name, age, grade, focusArea, remarks, engagementData, insight } = student;
+  const { name, age, grade, focusArea, remarks, engagementData, insight, academicMetrics } = student;
   
   const avgConsistency = engagementData.length ? engagementData.reduce((acc, curr) => acc + curr.consistency, 0) / engagementData.length : 0;
   const avgDepth = engagementData.length ? engagementData.reduce((acc, curr) => acc + curr.depth, 0) / engagementData.length : 0;
@@ -18,6 +18,14 @@ export const ParentPortal: React.FC<Props> = ({ student }) => {
     { name: 'Consistency Rhythm', value: avgConsistency, color: '#00bbf9' },
     { name: 'Cognitive Depth', value: avgDepth, color: '#ff3366' },
     { name: 'Active Presence', value: avgFocus, color: '#00f5d4' }
+  ];
+
+  // Real-time Academic Indicators for the matrix
+  const academicIndicators = [
+    { label: 'Submissions', value: academicMetrics.assignmentSubmissionCount, max: 40, color: 'bg-cyan-500' },
+    { label: 'Attendance', value: 100 - academicMetrics.attendanceDropPercentage, max: 100, color: 'bg-emerald-500' },
+    { label: 'Timeliness', value: (1 - academicMetrics.lateSubmissionRatio) * 100, max: 100, color: 'bg-magenta-500' },
+    { label: 'Streak Stability', value: Math.max(0, 5 - academicMetrics.missingAssignmentStreak) * 20, max: 100, color: 'bg-amber-500' }
   ];
 
   const getSyncStatus = (score: number) => {
@@ -38,7 +46,7 @@ export const ParentPortal: React.FC<Props> = ({ student }) => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-700">
+    <div className="max-w-7xl mx-auto space-y-12">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
          {[
            { label: 'Student', val: name },
@@ -54,66 +62,95 @@ export const ParentPortal: React.FC<Props> = ({ student }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="tile rgb-border lg:col-span-6 p-12 flex flex-col items-center glow-blue bg-stone-950/40 relative">
-          <div className="tile-header w-full border-b border-white/5 pb-4 mb-10">
+        <div className="tile rgb-border lg:col-span-7 p-10 flex flex-col glow-blue bg-stone-950/40 relative">
+          <div className="tile-header w-full border-b border-white/5 pb-4 mb-8">
             <span className="rgb-text font-bold uppercase tracking-[0.2em]">Rhythmic Engagement Matrix</span>
-            <span className="text-stone-600 font-mono text-[8px]">SECURE_REPORT: {student.id.slice(-4)}</span>
+            <span className="text-stone-600 font-mono text-[8px]">LIVE_FEED: {student.id.slice(-4)}</span>
           </div>
 
-          <div className={`absolute top-28 right-12 px-4 py-1.5 rounded-full border ${status.bg} ${status.border} ${status.color} mono text-[10px] tracking-widest font-bold shadow-lg animate-pulse`}>
-            STATUS: {status.label}
-          </div>
-
-          <div className="relative w-72 h-72 mb-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={95}
-                  outerRadius={125}
-                  paddingAngle={8}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.8} />
-                  ))}
-                </Pie>
-                <RechartsTooltip 
-                  contentStyle={{ backgroundColor: '#060505', border: '1px solid rgba(255,255,255,0.1)', fontSize: '11px', borderRadius: '12px', color: '#fff' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-               <span className={`text-7xl font-light tracking-tighter ${status.color}`}>
-                 {score}%
-               </span>
-               <span className="mono text-[10px] text-stone-500 uppercase tracking-[0.3em] mt-3">Sync Level</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <div className="relative">
+              <div className="relative w-64 h-64 mx-auto">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={85}
+                      outerRadius={110}
+                      paddingAngle={8}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.8} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#060505', border: '1px solid rgba(255,255,255,0.1)', fontSize: '11px', borderRadius: '12px', color: '#fff' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                   <span className={`text-6xl font-light tracking-tighter ${status.color}`}>
+                     {score}%
+                   </span>
+                   <span className="mono text-[8px] text-stone-500 uppercase tracking-[0.3em] mt-2">Sync Level</span>
+                </div>
+              </div>
+              <div className="mt-8 grid grid-cols-1 gap-2">
+                 {chartData.map((item) => (
+                    <div key={item.name} className="flex items-center justify-between px-4 py-2 bg-white/[0.02] border border-white/5 rounded-lg">
+                       <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color, boxShadow: `0 0 8px ${item.color}` }}></div>
+                          <span className="mono text-[8px] text-stone-400 uppercase tracking-widest">{item.name}</span>
+                       </div>
+                       <span className="mono text-[10px] text-stone-200 font-bold">{item.value.toFixed(0)}%</span>
+                    </div>
+                 ))}
+              </div>
             </div>
-          </div>
 
-          <div className="text-center space-y-6 max-w-md">
-             <div className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-               <h4 className="mono text-[10px] text-stone-400 uppercase tracking-widest mb-3">Guardian Summary</h4>
-               <p className="text-stone-200 font-light italic text-xl leading-relaxed">
-                 {getParentAdvice(score)}
-               </p>
-             </div>
-             
-             <div className="grid grid-cols-3 gap-4 pt-4 w-full">
-                {chartData.map((item) => (
-                  <div key={item.name} className="flex flex-col items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color, boxShadow: `0 0 12px ${item.color}` }}></div>
-                    <span className="mono text-[8px] text-stone-500 uppercase tracking-widest text-center">{item.name}</span>
+            <div className="space-y-6">
+              <div className="p-4 bg-white/[0.03] border border-white/10 rounded-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-2">
+                  <div className={`px-2 py-0.5 rounded-full border ${status.bg} ${status.border} ${status.color} mono text-[7px] tracking-widest font-bold`}>
+                    {status.label}
                   </div>
-                ))}
-             </div>
+                </div>
+                <h4 className="mono text-[9px] text-stone-500 uppercase tracking-widest mb-6">Academic Rhythm Indicators</h4>
+                <div className="space-y-5">
+                  {academicIndicators.map((indicator, idx) => (
+                    <div key={idx} className="space-y-2">
+                      <div className="flex justify-between items-center px-1">
+                        <span className="mono text-[8px] text-stone-400 uppercase tracking-wider">{indicator.label}</span>
+                        <span className="mono text-[9px] text-stone-200 font-bold">
+                          {indicator.label === 'Attendance' || indicator.label === 'Timeliness' || indicator.label === 'Streak Stability' 
+                            ? `${indicator.value.toFixed(0)}%` 
+                            : indicator.value}
+                        </span>
+                      </div>
+                      <div className="h-[2px] w-full bg-stone-900 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-1000 ease-out ${indicator.color}`} 
+                          style={{ width: `${(indicator.value / indicator.max) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 bg-stone-900/40 border border-white/5 rounded-2xl">
+                 <p className="text-stone-400 text-[11px] font-light italic leading-relaxed">
+                   "The data matrix above is synthesized from active teacher logs and behavioral sensing layers, refreshed in real-time as educators update the student's profile."
+                 </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="tile rgb-border lg:col-span-6 p-10 flex flex-col justify-center bg-gradient-to-br from-stone-900/40 to-stone-950/70">
+        <div className="tile rgb-border lg:col-span-5 p-10 flex flex-col justify-center bg-gradient-to-br from-stone-900/40 to-stone-950/70">
           <div className="tile-header mb-8">
             <span className="text-cyan-400 font-bold uppercase tracking-widest">Supportive Alignment Plan</span>
             <span className="text-stone-500 mono text-[8px]">AI_GUIDE: ENABLED</span>
@@ -122,7 +159,7 @@ export const ParentPortal: React.FC<Props> = ({ student }) => {
           <div className="space-y-10">
             <div className="space-y-4">
               <span className="mono text-[9px] text-magenta-500 uppercase tracking-widest font-bold">Rhythmic Analysis</span>
-              <h3 className="serif text-3xl md:text-4xl text-stone-50 font-light leading-[1.2] italic tracking-tight border-l-2 border-magenta-500/30 pl-8">
+              <h3 className="serif text-2xl md:text-3xl text-stone-50 font-light leading-[1.3] italic tracking-tight border-l-2 border-magenta-500/30 pl-8">
                 "{insight?.observation || 'Synthesizing the last 168 hours of behavioral patterns...'}"
               </h3>
             </div>
@@ -133,9 +170,9 @@ export const ParentPortal: React.FC<Props> = ({ student }) => {
                <h4 className="mono text-[10px] text-white uppercase tracking-[0.4em] font-bold">AI Recommended Actions</h4>
                <div className="space-y-3">
                   {(insight?.suggestions || ['Synchronizing teacher logs and academic metrics...']).map((s, i) => (
-                    <div key={i} className="flex gap-4 p-5 bg-white/[0.03] border border-white/10 rounded-2xl transition-all hover:bg-white/[0.05] group">
+                    <div key={i} className="flex gap-4 p-4 bg-white/[0.03] border border-white/10 rounded-xl transition-all hover:bg-white/[0.05] group">
                        <span className="text-magenta-500 mono font-bold text-xs">0{i+1}</span>
-                       <span className="text-stone-300 text-sm font-light leading-relaxed">{s}</span>
+                       <span className="text-stone-300 text-xs font-light leading-relaxed">{s}</span>
                     </div>
                   ))}
                </div>
@@ -155,7 +192,7 @@ export const ParentPortal: React.FC<Props> = ({ student }) => {
                 </svg>
              </div>
              <div className="flex-1 space-y-6">
-                <p className="text-stone-200 font-light italic leading-relaxed text-2xl md:text-4xl max-w-6xl">
+                <p className="text-stone-200 font-light italic leading-relaxed text-2xl md:text-3xl max-w-6xl">
                   {remarks ? `"${remarks}"` : "The educator has not provided qualitative session reflections for this cycle."}
                 </p>
                 <div className="flex flex-col sm:flex-row justify-between items-center border-t border-white/5 pt-8 gap-4">

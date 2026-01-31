@@ -37,6 +37,7 @@ export interface Student {
   age?: string;
   grade?: string;
   focusArea?: string;
+  subjectEmoji?: string;
   remarks: string;
   engagementData: EngagementPoint[];
   academicMetrics: AcademicMetrics;

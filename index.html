@@ -136,25 +136,28 @@
             transition: all 0.5s cubic-bezier(0.68, -0.6, 0.32, 1.6);
         }
 
-        /* Gravity Shift Animation */
+        /* Gravity Shift Animation - Enhanced Physicality */
         @keyframes gravity-shift {
             0% {
                 opacity: 0;
-                transform: translateY(120px) scale(0.96);
-                filter: blur(8px);
+                transform: translateY(160px) rotateX(8deg) scale(0.95);
+                filter: blur(12px);
             }
-            70% {
-                transform: translateY(-12px) scale(1.01);
+            60% {
+                transform: translateY(-10px) rotateX(-2deg) scale(1.01);
             }
             100% {
                 opacity: 1;
-                transform: translateY(0) scale(1);
+                transform: translateY(0) rotateX(0) scale(1);
                 filter: blur(0);
             }
         }
 
         .gravity-shift {
-            animation: gravity-shift 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: gravity-shift 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            perspective: 1200px;
+            transform-style: preserve-3d;
+            will-change: transform, opacity;
         }
 
         .sukoya-text {

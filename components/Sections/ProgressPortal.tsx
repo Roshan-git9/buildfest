@@ -37,7 +37,7 @@ export const ProgressPortal: React.FC<Props> = ({ student }) => {
   ];
 
   return (
-    <div className="relative min-h-[85vh] w-full flex flex-col justify-end p-12 md:px-24 md:pb-32 animate-in fade-in duration-1000">
+    <div className="relative min-h-[85vh] w-full flex flex-col justify-end p-12 md:px-24 md:pb-32">
       {/* Slogan Top Right - Matches Reference Style */}
       <div className="absolute top-12 right-12 text-right hidden md:block">
         <span className="mono text-xs font-bold tracking-[0.6em] text-white/60">WORK FAST. LEARN SLOW.</span>

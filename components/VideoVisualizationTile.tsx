@@ -15,9 +15,9 @@ export const VintageAestheticTile: React.FC<Props> = ({ insight }) => {
 
   const loadingMessages = [
     "Developing film grain...",
+    "Capturing cloud formations...",
     "Adjusting exposure curves...",
-    "Capturing nostalgia...",
-    "Applying warm tint...",
+    "Infusing dreamy nostalgia...",
     "Rendering vintage finish..."
   ];
 
@@ -49,7 +49,8 @@ export const VintageAestheticTile: React.FC<Props> = ({ insight }) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const mood = insight.isStudying ? "serene and focused" : "dreamy and drifting";
-      const basePrompt = `A high-quality vintage photograph with a ${mood} atmosphere. Warm film grain, nostalgic 1970s aesthetic, faded colors, cinematic lighting, soft focus, 35mm film style. The subject is an abstract representation of calm and nostalgia. Highly detailed, aesthetic composition.`;
+      // Specific prompt for "cloud dreamy" images with vintage aesthetic
+      const basePrompt = `A high-quality vintage photograph featuring ethereal, cloud-like, and dreamy visuals with a ${mood} atmosphere. Soft, glowing cumulus clouds in pastel sunset skies, nostalgic 1970s analog film aesthetic, warm film grain, faded colors, cinematic golden hour lighting, soft focus, 35mm film style. The subject is an abstract, serene representation of serenity amidst the clouds. Highly detailed, artistic and aesthetic composition.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
@@ -111,14 +112,14 @@ export const VintageAestheticTile: React.FC<Props> = ({ insight }) => {
             </div>
             <div className="space-y-2">
               <p className="text-stone-300 font-light italic">{loadingMessages[loadingStep]}</p>
-              <p className="text-stone-600 mono text-[9px] uppercase tracking-tighter">Gemini 2.5: Developing Image</p>
+              <p className="text-stone-600 mono text-[9px] uppercase tracking-tighter">Gemini 2.5: Generating Clouds</p>
             </div>
           </div>
         ) : imageUrl ? (
           <div className="w-full h-full relative group/img">
             <img 
               src={imageUrl} 
-              alt="Vintage Aesthetic"
+              alt="Vintage Dreamy Clouds"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
@@ -126,30 +127,30 @@ export const VintageAestheticTile: React.FC<Props> = ({ insight }) => {
                 onClick={generateImage}
                 className="liquid-button px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white mono text-[10px] tracking-widest uppercase hover:bg-white/20 rounded-full"
                >
-                 Capture New Moment
+                 Capture New Cloud Dream
                </button>
             </div>
           </div>
         ) : (
           <div className="text-center p-8 space-y-4">
-             <div className="text-4xl font-extralight text-stone-700 tracking-tighter mb-4 uppercase">Vintage Atmosphere</div>
+             <div className="text-4xl font-extralight text-stone-700 tracking-tighter mb-4 uppercase">Dreamy Clouds</div>
              <p className="text-stone-500 text-xs font-light max-w-xs mx-auto mb-6">
-               Synthesize a personalized vintage aesthetic image reflecting the current cognitive rhythm.
+               Synthesize ethereal, cloud-based vintage visuals reflecting the student's current cognitive rhythm.
              </p>
              <button 
               onClick={generateImage}
               disabled={!insight}
               className="liquid-button px-10 py-3 bg-stone-100 text-stone-900 font-medium text-[10px] tracking-widest hover:bg-white transition-all uppercase disabled:opacity-20 rounded-full"
              >
-               Generate Vintage
+               Synthesize Dream
              </button>
           </div>
         )}
       </div>
 
       <div className="mt-4 flex items-center justify-between text-[8px] mono text-stone-600 tracking-widest">
-        <span>MODE: AESTHETIC_RECALL</span>
-        <span>FORMAT: ANALOG_OPTIMIZED</span>
+        <span>MODE: CLOUD_AESTHETIC</span>
+        <span>FORMAT: DREAM_OPTIMIZED</span>
       </div>
     </div>
   );
