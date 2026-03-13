@@ -1,44 +1,9 @@
-# Rhythm Flow - Local Hosting Guide
+Our platform is called RhythmFlow, and the name reflects the problem we aim to solve. Every student has a learning rhythm—a natural flow of understanding, participation, and progress. When this rhythm quietly breaks, disengagement begins, often before anyone notices. RhythmFlow helps identify these early disruptions and restore the student’s learning flow before they fall behind.
 
-This application is a high-fidelity AI sensing layer for educators. It uses real student datasets to monitor learning drift and provide insights.
+Aligned with the idea “Noticing Before It’s Too Late,” RhythmFlow is an AI-driven platform that detects early learning drift without labeling or alarming students. Instead of asking who is failing, we ask whose rhythm is slowly drifting.
 
-## Prerequisites
+The system combines insights from teachers, students, and parents. Teachers provide observations such as performance, attendance, and participation. RhythmFlow also considers lifestyle signals like sleep patterns, screen time, stress levels, anxiety, and activity, because learning performance is often influenced by well-being.
 
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
-- [npm](https://www.npmjs.com/) (comes with Node.js)
-- A Google Gemini API Key (get one at [aistudio.google.com](https://aistudio.google.com/app/apikey))
+Using these signals, the platform analyzes patterns and generates a rhythmic engagement score, highlighting strengths and early areas of concern. Students receive supportive feedback on where to improve, while parents get a simplified progress overview to provide timely support.
 
-## Getting Started
-
-1. **Extract the project files** into a directory of your choice.
-2. **Open a terminal** (Command Prompt, PowerShell, or Terminal) and navigate to that directory.
-3. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-4. **Configure your API Key**:
-   - Create a file named `.env` in the root directory.
-   - Add the following line to the file:
-     ```env
-     GEMINI_API_KEY=your_actual_api_key_here
-     ```
-5. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
-6. **Open your browser** and go to `http://localhost:3000`.
-
-## Using the Dataset
-
-The application is pre-loaded with the student dataset you provided. 
-- On the first run, it will automatically populate the registry with entries like Aarav, Meera, Ishaan, etc.
-- You can view their specific lifestyle metrics (Screen Time, Sleep, Physical Activity) in the **Progress** portal.
-- The AI insights are generated in real-time based on these metrics.
-
-## Production Build
-
-To build the app for production:
-```bash
-npm run build
-```
-The optimized files will be in the `dist/` folder, which can be served by any static web server.
+In this way, RhythmFlow moves education from reactive intervention to proactive care, helping every student maintain their learning rhythm and stay in flow.
