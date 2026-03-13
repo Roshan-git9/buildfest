@@ -6,6 +6,14 @@ export interface Observation {
   intensity: 'subtle' | 'moderate';
 }
 
+export interface AudioLog {
+  id: string;
+  base64Data: string;
+  transcript: string;
+  timestamp: string;
+  voiceName: string;
+}
+
 export interface EngagementPoint {
   time: string;
   consistency: number;
@@ -29,17 +37,35 @@ export interface AcademicMetrics {
   attendanceTrend: 'rising' | 'falling' | 'stable';
   gradeVariance: number;
   missingAssignmentStreak: number;
+  // New fields from dataset
+  gender?: string;
+  screenTime?: number;
+  sleepDuration?: number;
+  sleepTime?: string;
+  physicalActivity?: number;
+  stressLevel?: string;
+  anxiousBeforeExams?: string;
+  performanceChange?: string;
+}
+
+export interface Message {
+  id: string;
+  sender: 'Teacher' | 'System';
+  text: string;
+  timestamp: string;
 }
 
 export interface Student {
   id: string;
   name: string;
-  age?: string;
-  grade?: string;
-  focusArea?: string;
+  age?: number;
+  educationLevel?: string;
+  gender?: string;
   subjectEmoji?: string;
   remarks: string;
   engagementData: EngagementPoint[];
   academicMetrics: AcademicMetrics;
   insight: AIPerspective | null;
+  messages: Message[];
+  audioLogs: AudioLog[];
 }

@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { AIPerspective, AcademicMetrics } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -52,4 +52,23 @@ export async function getObservationalInsight(
   });
 
   return JSON.parse(response.text.trim());
+}
+
+export async function generateVocalInstruction(text: string, voiceName: string = 'Kore'): Promise<string> {
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-preview-tts",
+    contents: [{ parts: [{ text: `Speak as a supportive, calm educational mentor. Instruction: ${text}` }] }],
+    config: {
+      responseModalities: [Modality.AUDIO],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: { voiceName },
+        },
+      },
+    },
+  });
+
+  const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  if (!base64Audio) throw new Error("Audio generation failed");
+  return base64Audio;
 }

@@ -1,5 +1,7 @@
 {
   "name": "Rhythm Flow",
   "description": "A high-fidelity AI sensing layer for educators to monitor learning drift with a cinematic, data-driven interface.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

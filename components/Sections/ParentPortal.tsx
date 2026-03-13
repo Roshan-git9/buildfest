@@ -1,15 +1,82 @@
 
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
-import { Student } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { 
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip 
+} from 'recharts';
+import { Student, AcademicMetrics } from '../../types';
 
 interface Props {
   student: Student;
+  onUpdateStudent: (updates: Partial<Student>) => void;
 }
 
-export const ParentPortal: React.FC<Props> = ({ student }) => {
+const FloatingInput = ({ label, type, value, onChange, step }: { label: string, type: string, value: any, onChange: (val: any) => void, step?: string }) => {
+  const id = React.useId();
+  return (
+    <div className="relative group mb-2">
+      <input
+        id={id}
+        type={type}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(type === 'number' ? (step ? parseFloat(e.target.value) : parseInt(e.target.value)) : e.target.value)}
+        placeholder=" "
+        className="peer w-full bg-stone-900/40 border border-white/5 rounded px-4 pt-6 pb-2 text-stone-100 mono text-xs outline-none transition-all focus:border-cyan-500/40 focus:bg-stone-900/60"
+      />
+      <label
+        htmlFor={id}
+        className="absolute left-4 top-4 text-stone-500 mono text-[8px] uppercase tracking-widest transition-all pointer-events-none peer-placeholder-shown:top-4 peer-placeholder-shown:text-xs peer-placeholder-shown:text-stone-600 peer-focus:top-1.5 peer-focus:text-[7px] peer-focus:text-cyan-500/80 peer-[:not(:placeholder-shown)]:top-1.5 peer-[:not(:placeholder-shown)]:text-[7px] peer-[:not(:placeholder-shown)]:text-stone-400"
+      >
+        {label}
+      </label>
+    </div>
+  );
+};
+
+const FloatingSelect = ({ label, value, onChange, options }: { label: string, value: string, onChange: (val: string) => void, options: {label: string, value: string}[] }) => {
+  const id = React.useId();
+  return (
+    <div className="relative group mb-2">
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="peer w-full bg-stone-900/40 border border-white/5 rounded px-4 pt-6 pb-2 text-stone-200 mono text-xs outline-none transition-all focus:border-cyan-500/40 focus:bg-stone-900/60 appearance-none"
+      >
+        {options.map(opt => <option key={opt.value} value={opt.value} className="bg-stone-900">{opt.label}</option>)}
+      </select>
+      <label
+        htmlFor={id}
+        className="absolute left-4 top-1.5 text-[7px] text-stone-400 mono uppercase tracking-widest transition-all pointer-events-none peer-focus:text-cyan-500/80"
+      >
+        {label}
+      </label>
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-20 group-hover:opacity-100 transition-opacity">
+        <svg className="w-2 h-2 text-stone-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
+      </div>
+    </div>
+  );
+};
+
+export const ParentPortal: React.FC<Props> = ({ student, onUpdateStudent }) => {
   const { name, age, grade, focusArea, remarks, engagementData, insight, academicMetrics } = student;
   
+  const [lifestyleForm, setLifestyleForm] = useState<AcademicMetrics>(academicMetrics);
+
+  useEffect(() => {
+    setLifestyleForm(academicMetrics);
+  }, [academicMetrics]);
+
+  const updateMetric = (key: keyof AcademicMetrics, value: any) => {
+    const nextMetrics = {
+      ...lifestyleForm,
+      [key]: value
+    };
+    setLifestyleForm(nextMetrics);
+    onUpdateStudent({ academicMetrics: nextMetrics });
+  };
+
   const avgConsistency = engagementData.length ? engagementData.reduce((acc, curr) => acc + curr.consistency, 0) / engagementData.length : 0;
   const avgDepth = engagementData.length ? engagementData.reduce((acc, curr) => acc + curr.depth, 0) / engagementData.length : 0;
   const avgFocus = engagementData.length ? engagementData.reduce((acc, curr) => acc + curr.focus, 0) / engagementData.length : 0;
@@ -20,7 +87,6 @@ export const ParentPortal: React.FC<Props> = ({ student }) => {
     { name: 'Active Presence', value: avgFocus, color: '#00f5d4' }
   ];
 
-  // Real-time Academic Indicators for the matrix
   const academicIndicators = [
     { label: 'Submissions', value: academicMetrics.assignmentSubmissionCount, max: 40, color: 'bg-cyan-500' },
     { label: 'Attendance', value: 100 - academicMetrics.attendanceDropPercentage, max: 100, color: 'bg-emerald-500' },
@@ -38,25 +104,58 @@ export const ParentPortal: React.FC<Props> = ({ student }) => {
   const score = insight?.engagementScore || 0;
   const status = getSyncStatus(score);
 
-  const getParentAdvice = (score: number) => {
-    if (score > 85) return "Deep synchronization achieved. Your child is navigating complex learning layers with high rhythmic precision.";
-    if (score > 70) return "Active flow detected. Patterns show a healthy balance of exploration and focused inquiry.";
-    if (score > 50) return "Slight rhythmic drift observed. This suggests a transition phase where supportive environmental cues might be helpful.";
-    return "Alignment is currently low. This is a gentle opportunity for a restorative pause or a shift in learning focus.";
-  };
+  const lifestyleData = [
+    { name: 'Screen Time', value: academicMetrics.screenTime || 0, color: '#ff3366' },
+    { name: 'Sleep', value: academicMetrics.sleepDuration || 0, color: '#00bbf9' },
+    { name: 'Activity', value: academicMetrics.physicalActivity || 0, color: '#00f5d4' },
+  ];
+
+  const anxietyColor = academicMetrics.anxiousBeforeExams === 'Yes' ? '#ff3366' : '#00f5d4';
 
   return (
     <div className="max-w-7xl mx-auto space-y-12">
+      {/* Lifestyle Configuration (Parent Only) */}
+      <div className="tile p-10 bg-stone-950/40 border-emerald-500/20 glow-blue">
+        <div className="tile-header mb-8">
+          <span className="text-emerald-400 font-bold uppercase tracking-widest">Lifestyle Configuration</span>
+          <span className="mono text-[8px] text-stone-500 uppercase tracking-widest">Parental Observation Layer</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-6">
+          <FloatingInput label="Screen Time (h)" type="number" step="0.1" value={lifestyleForm.screenTime} onChange={(val) => updateMetric('screenTime', val)} />
+          <FloatingInput label="Sleep Duration (h)" type="number" step="0.1" value={lifestyleForm.sleepDuration} onChange={(val) => updateMetric('sleepDuration', val)} />
+          <FloatingInput label="Sleep Time" type="text" value={lifestyleForm.sleepTime || ''} onChange={(val) => updateMetric('sleepTime', val)} />
+          <FloatingInput label="Activity (h)" type="number" step="0.1" value={lifestyleForm.physicalActivity} onChange={(val) => updateMetric('physicalActivity', val)} />
+          <FloatingSelect 
+            label="Stress Level" 
+            value={lifestyleForm.stressLevel || 'Medium'} 
+            onChange={(val) => updateMetric('stressLevel', val)} 
+            options={[{label: 'Low', value: 'Low'}, {label: 'Medium', value: 'Medium'}, {label: 'High', value: 'High'}]}
+          />
+          <FloatingSelect 
+            label="Exam Anxiety" 
+            value={lifestyleForm.anxiousBeforeExams || 'No'} 
+            onChange={(val) => updateMetric('anxiousBeforeExams', val)} 
+            options={[{label: 'Yes', value: 'Yes'}, {label: 'No', value: 'No'}]}
+          />
+          <FloatingSelect 
+            label="Perf. Change" 
+            value={lifestyleForm.performanceChange || 'Same'} 
+            onChange={(val) => updateMetric('performanceChange', val)} 
+            options={[{label: 'Improved', value: 'Improved'}, {label: 'Same', value: 'Same'}, {label: 'Declined', value: 'Declined'}]}
+          />
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
          {[
-           { label: 'Student', val: name },
+           { label: 'Student', val: name || 'no name' },
            { label: 'Academic Level', val: grade || 'Unassigned' },
            { label: 'Chronological Age', val: age ? `${age} yrs` : 'N/A' },
            { label: 'Primary Focus', val: focusArea || 'Holistic' }
          ].map((item, i) => (
            <div key={i} className="tile p-6 flex flex-col items-center justify-center border-white/5 bg-stone-950/20 text-center transition-transform hover:scale-[1.02]">
               <span className="mono text-[8px] text-stone-600 uppercase tracking-[0.3em] mb-2">{item.label}</span>
-              <span className="text-stone-200 font-light text-lg tracking-tight">{item.val}</span>
+              <span className={`tracking-tight ${item.label === 'Student' && !name ? 'text-stone-500 italic lowercase' : 'text-stone-200 font-light text-lg'}`}>{item.val}</span>
            </div>
          ))}
       </div>
@@ -177,6 +276,93 @@ export const ParentPortal: React.FC<Props> = ({ student }) => {
                   ))}
                </div>
             </div>
+          </div>
+        </div>
+
+        {/* Lifestyle & Anxiety Row */}
+        <div className="lg:col-span-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-8 tile p-10 bg-stone-950/40 border-white/5 glow-blue">
+            <div className="tile-header mb-8">
+              <span className="text-emerald-400 font-bold uppercase tracking-widest">Lifestyle Balance Matrix</span>
+              <div className="flex gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#ff3366]"></div>
+                  <span className="mono text-[8px] text-stone-400">SCREEN</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#00bbf9]"></div>
+                  <span className="mono text-[8px] text-stone-400">SLEEP</span>
+                </div>
+              </div>
+            </div>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={lifestyleData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{fill: '#78716c', fontSize: 10, fontWeight: 'bold'}} 
+                  />
+                  <YAxis hide />
+                  <Tooltip 
+                    cursor={{fill: 'rgba(255,255,255,0.02)'}}
+                    contentStyle={{backgroundColor: '#0c0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px'}}
+                    itemStyle={{fontSize: '10px', fontFamily: 'JetBrains Mono'}}
+                  />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={60}>
+                    {lifestyleData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-6 grid grid-cols-3 gap-4">
+               <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl text-center">
+                  <div className="mono text-[8px] text-stone-500 uppercase mb-1">Sleep Time</div>
+                  <div className="text-xl text-stone-200 font-light">{academicMetrics.sleepTime || 'N/A'}</div>
+               </div>
+               <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl text-center">
+                  <div className="mono text-[8px] text-stone-500 uppercase mb-1">Sleep Duration</div>
+                  <div className="text-xl text-stone-200 font-light">{academicMetrics.sleepDuration || 0}h</div>
+               </div>
+               <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl text-center">
+                  <div className="mono text-[8px] text-stone-500 uppercase mb-1">Screen Time</div>
+                  <div className="text-xl text-stone-200 font-light">{academicMetrics.screenTime || 0}h</div>
+               </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 tile p-10 bg-stone-950/40 border-white/5 glow-red flex flex-col items-center justify-center text-center">
+            <div className="tile-header mb-8 w-full">
+              <span className="text-rose-400 font-bold uppercase tracking-widest">Exam Anxiety Sensor</span>
+            </div>
+            <div className="relative mb-8">
+              <div className="w-40 h-40 rounded-full border-2 border-dashed border-white/10 flex items-center justify-center">
+                <div 
+                  className="w-32 h-32 rounded-full flex flex-col items-center justify-center transition-all duration-1000"
+                  style={{ 
+                    backgroundColor: `${anxietyColor}10`, 
+                    border: `1px solid ${anxietyColor}40`,
+                    boxShadow: `0 0 40px ${anxietyColor}20`
+                  }}
+                >
+                  <span className="text-lg mono font-bold" style={{ color: anxietyColor }}>
+                    {academicMetrics.anxiousBeforeExams === 'Yes' ? 'HIGH' : 'LOW'}
+                  </span>
+                </div>
+              </div>
+              {academicMetrics.anxiousBeforeExams === 'Yes' && (
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center animate-ping"></div>
+              )}
+            </div>
+            <p className="text-xs text-stone-400 mono uppercase tracking-widest leading-relaxed max-w-[200px]">
+              {academicMetrics.anxiousBeforeExams === 'Yes' 
+                ? 'Psychological drift detected prior to assessment cycles.' 
+                : 'Emotional stability maintained during testing phases.'}
+            </p>
           </div>
         </div>
 

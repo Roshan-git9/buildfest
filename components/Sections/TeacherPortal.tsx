@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Student, AcademicMetrics } from '../../types';
+import { Student, AcademicMetrics, AudioLog } from '../../types';
 import { predictStudentRisk, PredictionResult } from '../../utils/mlEngine';
+import { generateVocalInstruction } from '../../services/geminiService';
 
 interface Props {
   student: Student | null;
@@ -10,6 +11,7 @@ interface Props {
   onAddStudent: (name: string) => void;
   onDeleteStudent: (id: string) => void;
   onUpdateStudent: (updates: Partial<Student>) => void;
+  onSendMessage: (text: string) => void;
 }
 
 const SUBJECT_SIGILS = [
@@ -32,7 +34,14 @@ const DEFAULT_METRICS: AcademicMetrics = {
   lateSubmissionRatio: 0,
   attendanceTrend: 'stable',
   gradeVariance: 0,
-  missingAssignmentStreak: 0
+  missingAssignmentStreak: 0,
+  gender: 'Male',
+  screenTime: 0,
+  sleepDuration: 0,
+  physicalActivity: 0,
+  stressLevel: 'Medium',
+  anxiousBeforeExams: 'No',
+  performanceChange: 'Same'
 };
 
 const FloatingInput = ({ label, type, value, onChange, step }: { label: string, type: string, value: any, onChange: (val: any) => void, step?: string }) => {
@@ -83,7 +92,7 @@ const FloatingSelect = ({ label, value, onChange, options }: { label: string, va
   );
 };
 
-export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStudent, onAddStudent, onDeleteStudent, onUpdateStudent }) => {
+export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStudent, onAddStudent, onDeleteStudent, onUpdateStudent, onSendMessage }) => {
   const [formData, setFormData] = useState({
     name: student?.name || '',
     age: student?.age || '',
@@ -95,6 +104,9 @@ export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStud
   });
   
   const [newStudentName, setNewStudentName] = useState('');
+  const [messageDraft, setMessageDraft] = useState('');
+  const [vocalInstructionText, setVocalInstructionText] = useState('');
+  const [isSynthesizing, setIsSynthesizing] = useState(false);
 
   const prediction: PredictionResult = useMemo(() => {
     return predictStudentRisk(formData.academicMetrics);
@@ -125,15 +137,44 @@ export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStud
   }, [student]);
 
   const handleAdd = () => {
-    if (newStudentName.trim()) {
-      onAddStudent(newStudentName.trim());
-      setNewStudentName('');
-    }
+    onAddStudent(newStudentName.trim());
+    setNewStudentName('');
   };
 
   const handleSave = () => {
     if (student) {
       onUpdateStudent(formData);
+    }
+  };
+
+  const handleSendVocal = async () => {
+    if (!student || !vocalInstructionText.trim()) return;
+    setIsSynthesizing(true);
+    try {
+      const audioData = await generateVocalInstruction(vocalInstructionText);
+      const newLog: AudioLog = {
+        id: `audio-${Date.now()}`,
+        base64Data: audioData,
+        transcript: vocalInstructionText,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        voiceName: 'Kore'
+      };
+      
+      onUpdateStudent({
+        audioLogs: [...(student.audioLogs || []), newLog]
+      });
+      setVocalInstructionText('');
+    } catch (err) {
+      console.error("Vocal synthesis failed", err);
+    } finally {
+      setIsSynthesizing(false);
+    }
+  };
+
+  const handleSend = () => {
+    if (messageDraft.trim()) {
+      onSendMessage(messageDraft.trim());
+      setMessageDraft('');
     }
   };
 
@@ -178,12 +219,14 @@ export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStud
                     <div key={s.id} className="relative group flex items-stretch">
                       <button
                         onClick={() => onSelectStudent(s.id)}
-                        className={`flex-1 text-left px-5 py-4 rounded-lg border relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-[1.03] ${student && s.id === student.id ? 'bg-cyan-950/40 border-cyan-500/60 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.1)]' : 'bg-stone-900/40 border-white/5 text-stone-500 hover:border-cyan-500/30 hover:text-stone-300'}`}
+                        className={`flex-1 text-left px-5 py-4 rounded-lg border relative overflow-hidden transition-all duration-300 ${student && s.id === student.id ? 'bg-cyan-950/40 border-cyan-500/60 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.1)]' : 'bg-stone-900/40 border-white/5 text-stone-500 hover:border-cyan-500/30 hover:text-stone-300'}`}
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-lg">{s.subjectEmoji || '🌀'}</span>
                           <div>
-                            <div className="text-[11px] mono font-bold uppercase tracking-wider">{s.name}</div>
+                            <div className={`text-[11px] mono font-bold uppercase tracking-wider truncate max-w-[100px] ${!s.name?.trim() ? 'text-stone-700 italic lowercase' : ''}`}>
+                              {s.name?.trim() || 'no name'}
+                            </div>
                             <div className="text-[9px] mono opacity-40 uppercase mt-0.5">{s.grade || '??'} Grade</div>
                           </div>
                         </div>
@@ -191,11 +234,11 @@ export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStud
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`Completely remove profile for ${s.name}?`)) {
+                          if (confirm(`Purge profile for ${s.name?.trim() || 'this nameless profile'}? This action is irreversible.`)) {
                             onDeleteStudent(s.id);
                           }
                         }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 text-stone-600 hover:text-red-500 transition-all liquid-button hover:bg-red-500/10 rounded-full z-10"
+                        className="flex items-center justify-center px-3 text-stone-600 hover:text-red-500 hover:bg-red-500/10 transition-all rounded-r-lg"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
@@ -215,8 +258,8 @@ export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStud
                 
                 {!student ? (
                   <div className="h-[400px] flex flex-col items-center justify-center space-y-6">
-                    <div className="text-4xl serif font-light text-stone-600 italic">Registry Empty</div>
-                    <p className="text-stone-700 mono text-[9px] uppercase tracking-widest text-center max-w-xs">Please initialize a student entry in the left panel to begin configuration.</p>
+                    <div className="text-4xl serif font-light text-stone-600 italic">No Profile Selected</div>
+                    <p className="text-stone-700 mono text-[9px] uppercase tracking-widest text-center max-w-xs">Initialize a new entry or select from the registry to begin monitoring drift.</p>
                   </div>
                 ) : (
                   <>
@@ -239,32 +282,6 @@ export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStud
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                      <div>
-                        <FloatingInput 
-                          label="Chronological Age" 
-                          type="text" 
-                          value={formData.age} 
-                          onChange={(val) => setFormData(prev => ({ ...prev, age: val }))} 
-                        />
-                      </div>
-                      <div className="md:col-span-2">
-                        <FloatingSelect 
-                          label="Primary Subject Sigil"
-                          value={formData.subjectEmoji}
-                          onChange={(val) => {
-                            const selected = SUBJECT_SIGILS.find(s => s.emoji === val);
-                            setFormData(prev => ({ 
-                              ...prev, 
-                              subjectEmoji: val,
-                              focusArea: selected ? selected.label : prev.focusArea 
-                            }));
-                          }}
-                          options={SUBJECT_SIGILS.map(s => ({ label: `${s.emoji} ${s.label}`, value: s.emoji }))}
-                        />
-                      </div>
-                    </div>
-
                     <div className="h-[1px] w-full bg-white/5 mb-8"></div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-8">
@@ -272,22 +289,47 @@ export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStud
                       <FloatingInput label="Att. Drop %" type="number" step="0.1" value={formData.academicMetrics.attendanceDropPercentage} onChange={(val) => updateMetric('attendanceDropPercentage', val)} />
                       <FloatingInput label="Marks Drop (Pts)" type="number" step="0.1" value={formData.academicMetrics.marksDropBetweenTerms} onChange={(val) => updateMetric('marksDropBetweenTerms', val)} />
                       <FloatingInput label="Late Ratio (0-1)" type="number" step="0.01" value={formData.academicMetrics.lateSubmissionRatio} onChange={(val) => updateMetric('lateSubmissionRatio', val)} />
-                      <FloatingInput label="Grade Variance" type="number" step="0.1" value={formData.academicMetrics.gradeVariance} onChange={(val) => updateMetric('gradeVariance', val)} />
-                      <FloatingInput label="Missing Streak" type="number" value={formData.academicMetrics.missingAssignmentStreak} onChange={(val) => updateMetric('missingAssignmentStreak', val)} />
                     </div>
 
-                    <div className="relative group mb-8">
-                      <textarea 
-                        value={formData.remarks} 
-                        onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} 
-                        placeholder="Reflective session logs..."
-                        className="w-full h-32 bg-stone-900/60 border border-white/5 rounded px-4 py-4 text-stone-100 mono text-xs outline-none transition-all focus:border-magenta-500/40" 
-                      />
-                      <div className="absolute top-1 left-4 text-[7px] text-stone-500 mono uppercase tracking-widest">Observations</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                       <div className="space-y-4">
+                        <div className="relative group">
+                          <textarea 
+                            value={vocalInstructionText} 
+                            onChange={(e) => setVocalInstructionText(e.target.value)} 
+                            placeholder="Synthesize a mentor's vocal directive..."
+                            className="w-full h-32 bg-stone-900/60 border border-emerald-500/20 rounded px-4 py-6 text-emerald-400 mono text-xs outline-none transition-all focus:border-emerald-500/60" 
+                          />
+                          <div className="absolute top-1 left-4 text-[7px] text-emerald-500/70 mono uppercase tracking-widest">Echo Instruction Protocol</div>
+                        </div>
+                        <button 
+                          onClick={handleSendVocal}
+                          disabled={isSynthesizing || !vocalInstructionText.trim()}
+                          className={`w-full py-3 bg-emerald-600 text-stone-950 font-bold mono text-[8px] uppercase rounded tracking-[0.3em] transition-all hover:bg-emerald-500 shadow-lg ${isSynthesizing ? 'opacity-50 animate-pulse' : ''}`}
+                        >
+                          {isSynthesizing ? 'SYNTHESIZING_VOICE...' : 'GENERATE_VOCAL_ECHO'}
+                        </button>
+                      </div>
+                      
+                      <div className="relative group flex flex-col">
+                        <textarea 
+                          value={messageDraft} 
+                          onChange={(e) => setMessageDraft(e.target.value)} 
+                          placeholder="Type message for student progress feed..."
+                          className="w-full flex-1 bg-stone-900/60 border border-white/5 rounded px-4 py-6 text-cyan-400 mono text-xs outline-none transition-all focus:border-cyan-500/40" 
+                        />
+                        <div className="absolute top-1 left-4 text-[7px] text-stone-500 mono uppercase tracking-widest">Direct Message Protocol</div>
+                        <button 
+                          onClick={handleSend}
+                          className="mt-2 w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-stone-950 font-bold mono text-[8px] uppercase rounded tracking-widest transition-all"
+                        >
+                          Broadcast Message
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="flex justify-end">
-                      <button onClick={handleSave} className="liquid-button px-10 py-3 bg-stone-100 text-stone-950 font-bold text-[10px] tracking-[0.2em] uppercase rounded-full glow-red">Commit Profile Update</button>
+                    <div className="flex justify-end pt-4 border-t border-white/5">
+                      <button onClick={handleSave} className="liquid-button px-10 py-3 bg-stone-100 text-stone-950 font-bold text-[10px] tracking-[0.2em] uppercase rounded-full glow-red">Commit Data Sync</button>
                     </div>
                   </>
                 )}
@@ -302,7 +344,7 @@ export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStud
                   <div className="text-center space-y-2">
                     <div className="mono text-[8px] text-stone-500 uppercase tracking-widest">Help Required?</div>
                     <div className={`text-6xl font-light tracking-tighter ${student && prediction.risk_label === 1 ? 'text-red-500' : 'text-emerald-500'} ${!student ? 'opacity-10' : ''}`}>
-                      {student ? prediction.academic_help_required : 'NULL'}
+                      {student ? prediction.academic_help_required : '—'}
                     </div>
                   </div>
 
@@ -311,26 +353,17 @@ export const TeacherPortal: React.FC<Props> = ({ student, students, onSelectStud
                      <span className="mono text-[8px] text-stone-500 uppercase tracking-[0.4em]">Current Sigil</span>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                      <span className="mono text-[9px] text-stone-400 uppercase">Risk Probability</span>
-                      <span className="mono text-xs text-cyan-400 font-bold">{student ? (prediction.risk_probability * 100).toFixed(1) : '0.0'}%</span>
-                    </div>
-                    <div className="h-[2px] w-full bg-stone-900 rounded-full overflow-hidden">
-                       <div 
-                         className={`h-full transition-all duration-700 ${student && prediction.risk_label === 1 ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-cyan-500 shadow-[0_0_10px_cyan]'}`} 
-                         style={{ width: student ? `${prediction.risk_probability * 100}%` : '0%' }}
-                       />
-                    </div>
-                  </div>
-
-                  <div className="pt-8 border-t border-white/5 space-y-4">
-                    <div className="flex flex-col gap-1">
-                      <span className="mono text-[8px] text-stone-600 uppercase tracking-widest">Data Summary</span>
-                      <div className="text-[10px] text-stone-400 font-light space-y-1">
-                         <div>Student: <span className="text-stone-200">{formData.name || 'NULL'}</span></div>
-                         <div>Age: <span className="text-stone-200">{formData.age || 'NULL'}</span></div>
-                         <div>Grade: <span className="text-stone-200">{formData.grade || 'NULL'}</span></div>
+                  <div className="pt-8 border-t border-white/5 space-y-6">
+                    <div className="flex flex-col gap-2">
+                      <span className="mono text-[8px] text-emerald-500 uppercase tracking-widest font-bold">Vocal Archives</span>
+                      <div className="space-y-2">
+                         {student?.audioLogs?.length ? student.audioLogs.slice(-2).map(log => (
+                           <div key={log.id} className="text-[9px] text-stone-400 bg-stone-950/40 p-2 border border-emerald-500/10 rounded italic truncate">
+                             "{log.transcript}"
+                           </div>
+                         )) : (
+                           <span className="text-[8px] text-stone-700 italic">No vocal instructions logged.</span>
+                         )}
                       </div>
                     </div>
                   </div>

@@ -3,8 +3,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RealTimeClock } from './components/RealTimeClock';
 import { getObservationalInsight } from './services/geminiService';
 import { generateSyntheticData, generateAcademicMetrics } from './utils/dataGenerator';
-import { AIPerspective, EngagementPoint, Student } from './types';
+import { AIPerspective, EngagementPoint, Student, Message } from './types';
+import { STUDENT_DATASET } from './utils/studentData';
 import { VintageAestheticTile } from './components/VideoVisualizationTile';
+import { AudioPulseTile } from './components/AudioPulseTile';
 import { EngagementPatterns } from './components/Sections/EngagementPatterns';
 import { DriftIndicators } from './components/Sections/DriftIndicators';
 import { MomentSupport } from './components/Sections/MomentSupport';
@@ -31,9 +33,23 @@ const App: React.FC = () => {
   
   const [students, setStudents] = useState<Student[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_STUDENTS);
-    // Initialize empty as requested - "no name in teachers log not even Julian Vance"
     if (saved) return JSON.parse(saved);
-    return [];
+    
+    // Initialize with dataset if empty
+    return STUDENT_DATASET.map((entry, index) => ({
+      id: `std-dataset-${index}`,
+      name: entry.name,
+      age: entry.age,
+      educationLevel: entry.educationLevel,
+      gender: entry.gender,
+      remarks: '',
+      subjectEmoji: ['🌀', '🧪', '📚', '🎨', '🧬'][index % 5],
+      engagementData: generateSyntheticData(),
+      academicMetrics: generateAcademicMetrics(entry),
+      insight: null,
+      messages: [],
+      audioLogs: []
+    }));
   });
 
   const [activeStudentId, setActiveStudentId] = useState<string>(() => {
@@ -45,7 +61,8 @@ const App: React.FC = () => {
 
   const activeStudent = useMemo(() => {
     if (students.length === 0) return null;
-    return students.find(s => s.id === activeStudentId) || students[0];
+    const found = students.find(s => s.id === activeStudentId);
+    return found || null;
   }, [students, activeStudentId]);
 
   const studentRisk = useMemo(() => {
@@ -88,7 +105,7 @@ const App: React.FC = () => {
     setStudents(prev => {
       const next = prev.map(s => s.id === id ? { ...s, ...updates } : s);
       const updatedStudent = next.find(s => s.id === id);
-      if (updatedStudent) {
+      if (updatedStudent && updates.academicMetrics) {
         setTimeout(() => initInsight(updatedStudent, true), 100);
       }
       return next;
@@ -98,26 +115,34 @@ const App: React.FC = () => {
   const addStudent = (name: string) => {
     const newStudent: Student = {
       id: `std-${Date.now()}`,
-      name,
+      name: name.trim(),
       remarks: '',
       subjectEmoji: '🌀',
       engagementData: generateSyntheticData(),
       academicMetrics: generateAcademicMetrics(),
-      insight: null
+      insight: null,
+      messages: [],
+      audioLogs: []
     };
     setStudents(prev => [...prev, newStudent]);
     setActiveStudentId(newStudent.id);
   };
 
   const deleteStudent = (id: string) => {
-    setStudents(prev => {
-      const next = prev.filter(s => s.id !== id);
-      return next;
-    });
-    
     if (activeStudentId === id) {
       setActiveStudentId('');
     }
+    setStudents(prev => prev.filter(s => s.id !== id));
+  };
+
+  const handleSendMessage = (studentId: string, text: string) => {
+    const newMessage: Message = {
+      id: `msg-${Date.now()}`,
+      sender: 'Teacher',
+      text,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    setStudents(prev => prev.map(s => s.id === studentId ? { ...s, messages: [...s.messages, newMessage] } : s));
   };
 
   const handleRoleChange = (role: UserRole) => {
@@ -157,6 +182,7 @@ const App: React.FC = () => {
           onAddStudent={addStudent}
           onDeleteStudent={deleteStudent}
           onUpdateStudent={(updates) => activeStudent && updateStudent(activeStudent.id, updates)}
+          onSendMessage={(text) => activeStudent && handleSendMessage(activeStudent.id, text)}
         />
       );
     }
@@ -165,15 +191,15 @@ const App: React.FC = () => {
       return (
         <div className="flex flex-col items-center justify-center py-40 space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
            <div className="relative">
-              <div className="absolute inset-0 bg-cyan-500/20 blur-3xl rounded-full"></div>
+              <div className="absolute inset-0 bg-cyan-500/10 blur-3xl rounded-full"></div>
               <div className="relative text-stone-700 mono text-[10px] tracking-[0.8em] uppercase border border-stone-800 px-8 py-3 rounded-full backdrop-blur-sm">
-                SYSTEM_STATE: NULL_REGISTRY
+                SYSTEM_STATE: VOID
               </div>
            </div>
            <div className="text-center space-y-4">
-              <h2 className="serif text-5xl md:text-7xl text-stone-500 italic font-light tracking-tighter opacity-40">No records found.</h2>
+              <h2 className="serif text-5xl md:text-7xl text-stone-500 italic font-light tracking-tighter opacity-40">Registry Silent.</h2>
               <p className="text-stone-600 mono text-xs uppercase tracking-widest max-w-sm mx-auto leading-relaxed">
-                Initialize the educator sensing layer to begin monitoring cognitive learning drift.
+                Add an entry in the Teacher Log to activate the intelligence layer.
               </p>
            </div>
            <button 
@@ -220,6 +246,7 @@ const App: React.FC = () => {
         return (
           <ParentPortal 
             student={activeStudent}
+            onUpdateStudent={(updates) => activeStudent && updateStudent(activeStudent.id, updates)}
           />
         );
       case 'actions':
@@ -272,9 +299,9 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <VintageAestheticTile insight={activeStudent.insight} />
+            <AudioPulseTile logs={activeStudent.audioLogs || []} />
 
-            <div className={`tile rgb-border lg:col-span-3 p-6 h-[500px] ${glowClass}`}>
+            <div className={`tile rgb-border lg:col-span-5 p-6 h-[500px] ${glowClass}`}>
               <div className="tile-header">
                 <span className="mono text-[10px] tracking-widest uppercase text-stone-400">Markers</span>
               </div>
@@ -390,17 +417,22 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <div className="text-center mb-20 space-y-6">
+      <div className="text-center mb-20 space-y-6 h-[2.5em]">
         <h1 className="serif text-6xl md:text-8xl text-stone-50 tracking-tighter font-light uppercase">
-          {activeStudent ? activeStudent.name : 'NULL_ENTITY'}
+          {activeStudent ? (
+            activeStudent.name?.trim() || 
+            <span className="text-stone-700 italic opacity-40 lowercase text-4xl md:text-6xl">no name</span>
+          ) : ''}
         </h1>
-        <div className="flex items-center justify-center gap-3">
-          <div className="h-[1px] w-12 bg-stone-800"></div>
-          <p className="text-stone-500 mono text-[10px] tracking-[0.6em] uppercase">
-            Cognitive Phase: {visibleNavItems.find(i => i.id === currentView)?.label || 'Overview'}
-          </p>
-          <div className="h-[1px] w-12 bg-stone-800"></div>
-        </div>
+        {activeStudent && (
+          <div className="flex items-center justify-center gap-3 animate-in fade-in duration-500">
+            <div className="h-[1px] w-12 bg-stone-800"></div>
+            <p className="text-stone-500 mono text-[10px] tracking-[0.6em] uppercase">
+              Cognitive Phase: {visibleNavItems.find(i => i.id === currentView)?.label || 'Overview'}
+            </p>
+            <div className="h-[1px] w-12 bg-stone-800"></div>
+          </div>
+        )}
       </div>
 
       <main key={currentView} className="pb-32 gravity-shift">

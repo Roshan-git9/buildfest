@@ -1,20 +1,44 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Rhythm Flow - Local Hosting Guide
 
-# Run and deploy your AI Studio app
+This application is a high-fidelity AI sensing layer for educators. It uses real student datasets to monitor learning drift and provide insights.
 
-This contains everything you need to run your app locally.
+## Prerequisites
 
-View your app in AI Studio: https://ai.studio/apps/drive/1aJss_5tK0FVN6lNWNbvDYfNxIfqGV5R4
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [npm](https://www.npmjs.com/) (comes with Node.js)
+- A Google Gemini API Key (get one at [aistudio.google.com](https://aistudio.google.com/app/apikey))
 
-## Run Locally
+## Getting Started
 
-**Prerequisites:**  Node.js
+1. **Extract the project files** into a directory of your choice.
+2. **Open a terminal** (Command Prompt, PowerShell, or Terminal) and navigate to that directory.
+3. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+4. **Configure your API Key**:
+   - Create a file named `.env` in the root directory.
+   - Add the following line to the file:
+     ```env
+     GEMINI_API_KEY=your_actual_api_key_here
+     ```
+5. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
+6. **Open your browser** and go to `http://localhost:3000`.
 
+## Using the Dataset
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+The application is pre-loaded with the student dataset you provided. 
+- On the first run, it will automatically populate the registry with entries like Aarav, Meera, Ishaan, etc.
+- You can view their specific lifestyle metrics (Screen Time, Sleep, Physical Activity) in the **Progress** portal.
+- The AI insights are generated in real-time based on these metrics.
+
+## Production Build
+
+To build the app for production:
+```bash
+npm run build
+```
+The optimized files will be in the `dist/` folder, which can be served by any static web server.
